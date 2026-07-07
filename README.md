@@ -9,12 +9,22 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-online-brightgreen?logo=vercel)](https://codepilot-ai.vercel.app)
 
 **CodePilot AI** is an intelligent, automated code review agent that integrates with GitHub Pull Requests using the **Model Context Protocol (MCP)**. It analyzes diffs, provides contextual feedback, catches bugs, suggests improvements, and posts review comments — all powered by LLMs.
 
-[Quick Start](#-quick-start) · [Architecture](#-architecture) · [API Reference](#-api-reference) · [Deployment](#-deployment)
+**🔗 Live demo:** [codepilot-ai.vercel.app](https://codepilot-ai.vercel.app) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [Pipeline](docs/AI_PIPELINE.md) · [Deployment](#-deployment)
+
+<br/>
+
+![CodePilot AI dashboard](docs/screenshots/dashboard.png)
 
 </div>
+
+<!-- NOTE: update the Live Demo URL above to your actual Vercel URL after deploying. -->
+
+> **Live demo** runs the React dashboard in demo mode (built-in sample data, no backend) — see
+> [Deployment](#-deployment). The full stack (real PR reviews via webhooks) runs with `docker-compose`.
 
 ---
 
@@ -423,6 +433,23 @@ docker-compose up -d
 # Monitor logs
 docker-compose logs -f backend
 ```
+
+### Live demo — frontend on Vercel (free, always-on)
+
+The React dashboard ships with a **demo mode** (`VITE_DEMO_MODE=true`) that serves built-in sample
+data with no backend — ideal for a portfolio link. Deploy it in ~2 minutes:
+
+1. Push this repo to GitHub (done).
+2. On [vercel.com](https://vercel.com) → **New Project** → import this repo.
+3. Set:
+   - **Root Directory:** `frontend`
+   - **Framework Preset:** Vite (auto-detected) · Build: `npm run build` · Output: `dist`
+   - **Environment Variable:** `VITE_DEMO_MODE` = `true`
+4. **Deploy.** Vercel gives you a `https://<project>.vercel.app` URL. Update the Live Demo link at the
+   top of this README to match.
+
+SPA routing is handled by `frontend/vercel.json`. Netlify / Cloudflare Pages work the same way (same
+root dir, build, output, and env var).
 
 ### Production Checklist
 

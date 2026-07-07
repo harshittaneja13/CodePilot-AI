@@ -8,6 +8,7 @@ import type {
   ReviewComment,
   ChangedFile,
   ActivityEvent,
+  ExecutionLog,
 } from './types';
 
 // ─── Mock Review Activity ───────────────────────────────────────────────────
@@ -457,4 +458,20 @@ export const mockActivity: ActivityEvent[] = [
     repository_name: 'acme/infra-tools', pr_number: 23, pr_title: 'feat: Terraform module for EKS cluster',
     step: 'triage', status: 'skipped', message: 'PR has 3 files — below threshold, reviewing all', duration_ms: 0, created_at: minutesAgo(62),
   },
+];
+
+// ─── Mock Execution Logs (agent trace for a review) ─────────────────────────
+
+const secsAgo = (s: number) => new Date(Date.now() - s * 1000).toISOString();
+const demoReviewId = mockRecentReviews[0].id;
+
+export const mockExecutionLogs: ExecutionLog[] = [
+  { id: 'log-1', review_id: demoReviewId, step: 'triage', status: 'success', message: 'selected 3/6 files: internal/auth/jwt.go, internal/api/handlers/login.go', duration_ms: 410, created_at: secsAgo(75) },
+  { id: 'log-2', review_id: demoReviewId, step: 'rag_index', status: 'success', message: 'indexed 3 files', duration_ms: 880, created_at: secsAgo(72) },
+  { id: 'log-3', review_id: demoReviewId, step: 'agent_tool', status: 'success', message: '#1 get_file_diff(internal/auth/jwt.go) → 34 additions', duration_ms: 12, created_at: secsAgo(70) },
+  { id: 'log-4', review_id: demoReviewId, step: 'agent_tool', status: 'success', message: '#2 retrieve_context(where is JWT_SECRET loaded) → 2 chunks', duration_ms: 640, created_at: secsAgo(68) },
+  { id: 'log-5', review_id: demoReviewId, step: 'agent_tool', status: 'success', message: '#3 get_file_contents(internal/config/config.go) → 120 lines', duration_ms: 210, created_at: secsAgo(66) },
+  { id: 'log-6', review_id: demoReviewId, step: 'agent_review', status: 'success', message: 'steps=4 tool_calls=3 findings=8 tokens=4200', duration_ms: 21850, created_at: secsAgo(45) },
+  { id: 'log-7', review_id: demoReviewId, step: 'reflection', status: 'success', message: 'kept=6 filtered=2 tokens=980', duration_ms: 1120, created_at: secsAgo(43) },
+  { id: 'log-8', review_id: demoReviewId, step: 'publish_review', status: 'success', message: 'published 5 comments', duration_ms: 640, created_at: secsAgo(42) },
 ];
