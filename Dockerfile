@@ -26,7 +26,11 @@ COPY . .
 # Build a statically-linked binary with CGO disabled.
 # -ldflags="-s -w" strips debug info to reduce binary size (~30% smaller).
 # -trimpath removes local filesystem paths from the binary for reproducibility.
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+# TARGETARCH is provided by BuildKit (amd64 / arm64) and defaults to the build host's
+# architecture when unset, so the image builds correctly on both x86 and ARM hosts
+# (e.g. an Oracle Cloud Ampere / ARM free-tier VM).
+ARG TARGETARCH
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
     -ldflags="-s -w -X main.version=$(date +%Y%m%d)" \
     -trimpath \
     -o /app/codepilot-server \

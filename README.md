@@ -434,6 +434,12 @@ docker-compose up -d
 docker-compose logs -f backend
 ```
 
+### Full stack for free (real PR reviews)
+
+Run the whole thing (backend + Postgres + on-demand MCP container) on a free **Oracle Cloud
+Always-Free** VM, exposed over HTTPS with a free **Cloudflare Tunnel**. Copy-paste runbook:
+**[docs/DEPLOY_ORACLE.md](docs/DEPLOY_ORACLE.md)**.
+
 ### Live demo — frontend on Vercel (free, always-on)
 
 The React dashboard ships with a **demo mode** (`VITE_DEMO_MODE=true`) that serves built-in sample
