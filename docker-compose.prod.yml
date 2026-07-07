@@ -1,0 +1,97 @@
+# ============================================================================
+# CodePilot AI — Production compose (single-VM, free-tier friendly)
+# ============================================================================
+# Only the 4 services needed for real PR reviews (no Qdrant/Ollama, to save RAM).
+# Ports bind to 127.0.0.1 only: nothing listens on the VM's public IP — the app is
+# reached exclusively through the outbound Cloudflare Tunnel (see docs/DEPLOY_ORACLE.md).
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+# ============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: codepilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-codepilot}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-codepilot_secret}
+      POSTGRES_DB: ${DB_NAME:-codepilot}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-codepilot} -d ${DB_NAME:-codepilot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - codepilot-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: codepilot-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - codepilot-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codepilot-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    user: root
+    ports:
+      # Loopback-only: reachable on the VM (health checks) but never on the public IP.
+      - "127.0.0.1:8080:8080"
+    volumes:
+      # Lets the backend spawn the GitHub MCP server container on demand.
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - codepilot-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: codepilot-frontend
+    restart: unless-stopped
+    ports:
+      # Loopback-only: the Cloudflare Tunnel (running on the VM) connects here.
+      - "127.0.0.1:3000:80"
+    depends_on:
+      - backend
+    networks:
+      - codepilot-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  codepilot-network:
+    driver: bridge

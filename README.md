@@ -9,11 +9,11 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Live Demo](https://img.shields.io/badge/Live_Demo-online-brightgreen?logo=vercel)](https://codepilot-ai.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-online-brightgreen?logo=vercel)](https://code-pilot-ai-pr-review-agent.vercel.app/)
 
 **CodePilot AI** is an intelligent, automated code review agent that integrates with GitHub Pull Requests using the **Model Context Protocol (MCP)**. It analyzes diffs, provides contextual feedback, catches bugs, suggests improvements, and posts review comments — all powered by LLMs.
 
-**🔗 Live demo:** [codepilot-ai.vercel.app](https://codepilot-ai.vercel.app) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [Pipeline](docs/AI_PIPELINE.md) · [Deployment](#-deployment)
+**🔗 Live demo:** [codepilot-ai.vercel.app](https://code-pilot-ai-pr-review-agent.vercel.app/) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [Pipeline](docs/AI_PIPELINE.md) · [Deployment](#-deployment)
 
 <br/>
 

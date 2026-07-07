@@ -18,20 +18,39 @@ PR reviews work end-to-end. Everything below is copy-paste.
 
 ---
 
-## 1. Create the free VM
-Oracle Cloud Console → **Compute → Instances → Create instance**:
-- **Image:** Ubuntu 22.04
-- **Shape:** `VM.Standard.A1.Flex` (Ampere/ARM — the generous Always-Free one). Pick e.g. **2 OCPU /
-  12 GB** (within the free 4 OCPU / 24 GB). *(If ARM capacity says "out of host capacity", retry in a
-  bit or choose another availability domain/region.)*
-- Add your **SSH public key**, then **Create**.
-- Note the **public IP**.
+## 1. Create the free VM (step by step)
 
-> You do **not** need to open any ingress ports — the Cloudflare Tunnel connects outbound.
+**1.1 — Make an Oracle Cloud account.** Go to <https://www.oracle.com/cloud/free/> → **Start for
+free**. Verify email + phone, add a card (identity check only — Always Free resources are never
+charged). Pick a **home region** close to you (ARM capacity varies by region; a less-popular region
+is easier to get).
 
-SSH in:
+**1.2 — Create an SSH key on your laptop** (skip if you already have one):
 ```bash
-ssh ubuntu@<PUBLIC_IP>
+ssh-keygen -t ed25519 -f ~/.ssh/oracle_codepilot -C "codepilot"
+# creates ~/.ssh/oracle_codepilot (private) and ~/.ssh/oracle_codepilot.pub (public)
+```
+
+**1.3 — Launch the instance.** In the OCI Console: ☰ menu → **Compute → Instances → Create instance**.
+- **Name:** `codepilot`
+- **Image:** click **Edit** → **Change image** → **Canonical Ubuntu** → 22.04.
+- **Shape:** click **Change shape** → **Ampere** → **VM.Standard.A1.Flex** → set **2 OCPUs** and
+  **12 GB** (well within the Always-Free 4 OCPU / 24 GB).
+  - If you see **"Out of host capacity"**: lower to 1 OCPU / 6 GB, pick a different **Availability
+    Domain**, or try again later / another region. (This is the one common friction point on the free
+    ARM tier — just retry.)
+- **Networking:** leave defaults (it creates a VCN + public subnet). Ensure **Assign a public IPv4
+  address = Yes**.
+- **Add SSH keys:** choose **Paste public keys** and paste the contents of
+  `~/.ssh/oracle_codepilot.pub`.
+- Click **Create**. Wait ~1 minute until state is **Running**, then copy the **Public IP address**.
+
+> You do **not** need to open any ingress ports — the Cloudflare Tunnel connects **outbound**, so the
+> VM stays fully closed to the internet.
+
+**1.4 — SSH in:**
+```bash
+ssh -i ~/.ssh/oracle_codepilot ubuntu@<PUBLIC_IP>
 ```
 
 ## 2. Install Docker
@@ -71,11 +90,12 @@ RAG_ENABLED=false
 *(You can set `WEBHOOK_BASE_URL` to your public URL later so repos auto-register their webhook.)*
 
 ## 4. Start the stack
-Start only the services you need (skips the RAM-heavy Qdrant/Ollama):
+Use the production compose file — it runs only the 4 needed services (no RAM-heavy Qdrant/Ollama) and
+binds ports to loopback only (nothing exposed on the public IP):
 ```bash
-docker compose up -d --build postgres redis backend frontend
-docker compose ps
-docker compose logs -f backend      # watch startup + migrations (Ctrl-C to stop tailing)
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f backend   # startup + migrations (Ctrl-C to stop)
 ```
 Local check on the VM:
 ```bash
@@ -96,8 +116,16 @@ curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloud
 ```bash
 cloudflared tunnel --url http://localhost:3000
 ```
-It prints `https://<random>.trycloudflare.com`. That's your public app URL. (Runs in the foreground;
-to keep it up, run it in `tmux`/`screen` or as a service. The URL changes if cloudflared restarts.)
+It prints `https://<random>.trycloudflare.com` — your public app URL. It runs in the foreground; to
+keep it alive across logouts/reboots, install the provided systemd unit:
+```bash
+sudo cp deploy/cloudflared-quick.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now cloudflared-quick
+# print the current public URL:
+journalctl -u cloudflared-quick -n 40 --no-pager | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com'
+```
+> The quick-tunnel URL **changes whenever cloudflared restarts**. Fine for demoing / screen-recording;
+> for a permanent URL use Option B.
 
 **Option B — stable URL (needs a domain on Cloudflare, free plan):**
 ```bash
@@ -132,9 +160,9 @@ Or just use the dashboard: add the repo, open a PR, hit **Run Review**.
 ```bash
 cd ~/CodePilot-AI
 git pull
-docker compose up -d --build postgres redis backend frontend   # redeploy
-docker compose logs -f backend                                 # logs
-docker compose down                                            # stop
+docker compose -f docker-compose.prod.yml up -d --build   # redeploy
+docker compose -f docker-compose.prod.yml logs -f backend # logs
+docker compose -f docker-compose.prod.yml down            # stop
 ```
 
 ## Troubleshooting

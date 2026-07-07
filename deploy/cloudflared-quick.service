@@ -1,0 +1,30 @@
+# Cloudflare "quick" tunnel for CodePilot AI — free HTTPS URL, auto-starts on boot.
+#
+# Install (on the VM):
+#   sudo cp deploy/cloudflared-quick.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now cloudflared-quick
+#
+# Get the public URL (printed by cloudflared):
+#   journalctl -u cloudflared-quick -n 40 --no-pager | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com'
+#
+# NOTE: a "quick" tunnel URL is EPHEMERAL — it changes every time cloudflared restarts.
+# For a permanent URL, use a NAMED tunnel with a Cloudflare domain instead:
+#   cloudflared tunnel login && cloudflared tunnel create codepilot
+#   cloudflared tunnel route dns codepilot app.yourdomain.com
+#   sudo cloudflared service install     # this replaces the unit below
+
+[Unit]
+Description=Cloudflare Tunnel (CodePilot AI quick tunnel)
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate --url http://localhost:3000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
