@@ -1,0 +1,165 @@
+# ============================================================================
+# CodePilot AI — Docker Compose Orchestration
+# Spins up the full stack: Postgres, Redis, Go backend, React frontend
+# ============================================================================
+# Usage:
+#   cp .env.example .env   # configure your secrets
+#   docker-compose up -d   # start everything
+#   docker-compose logs -f # watch logs
+# ============================================================================
+
+services:
+  # --------------------------------------------------------------------------
+  # PostgreSQL — Primary data store
+  # Stores PR reviews, repository metadata, review comments, and user data.
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: codepilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-codepilot}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-codepilot_secret}
+      POSTGRES_DB: ${DB_NAME:-codepilot}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-codepilot} -d ${DB_NAME:-codepilot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - codepilot-network
+
+  # --------------------------------------------------------------------------
+  # Redis — Caching and job queue
+  # Used for caching LLM responses, rate-limiting, and background job queues.
+  # --------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: codepilot-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - codepilot-network
+
+  # --------------------------------------------------------------------------
+  # Qdrant — Vector database for RAG (semantic code retrieval)
+  # Stores embedded code chunks; the review agent queries it for cross-file context.
+  # Only used when RAG_ENABLED=true.
+  # --------------------------------------------------------------------------
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: codepilot-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - codepilot-network
+
+  # --------------------------------------------------------------------------
+  # Ollama — Local embeddings sidecar (OpenAI-compatible /v1/embeddings)
+  # Serves the embedding model used to index/query code. Pull the model once:
+  #   docker exec codepilot-ollama ollama pull nomic-embed-text
+  # Only used when RAG_ENABLED=true.
+  # --------------------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: codepilot-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - codepilot-network
+
+  # --------------------------------------------------------------------------
+  # Backend — Go (Gin) API server
+  # Handles webhooks, orchestrates MCP-powered PR reviews, serves REST API.
+  # The backend spawns the GitHub MCP server container via Docker exec/run
+  # on-demand, so it is NOT listed as a separate compose service.
+  # --------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: codepilot-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Override host values to use Docker DNS service names.
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      # RAG services (used only when RAG_ENABLED=true).
+      QDRANT_URL: http://qdrant:6333
+      EMBEDDINGS_BASE_URL: http://ollama:11434/v1
+    user: root
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    volumes:
+      # Mount Docker socket so the backend can spawn MCP server containers.
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - codepilot-network
+
+  # --------------------------------------------------------------------------
+  # Frontend — React (Vite) dashboard served via Nginx
+  # Provides the review dashboard, PR viewer, and configuration UI.
+  # --------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: codepilot-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - codepilot-network
+
+# --------------------------------------------------------------------------
+# Persistent Volumes
+# --------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  qdrant_data:
+    driver: local
+  ollama_data:
+    driver: local
+
+# --------------------------------------------------------------------------
+# Network — All services communicate over this bridge network.
+# Docker DNS automatically resolves service names (e.g., "postgres", "redis").
+# --------------------------------------------------------------------------
+networks:
+  codepilot-network:
+    driver: bridge

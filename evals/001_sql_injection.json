@@ -1,0 +1,19 @@
+{
+  "name": "sql-injection-and-ignored-error",
+  "pr": {
+    "title": "Add user lookup by name",
+    "body": "Adds GetUser to fetch a user row by name.",
+    "files": [
+      {
+        "path": "user.go",
+        "language": "go",
+        "patch": "@@ -0,0 +1,7 @@\n+func GetUser(db *sql.DB, name string) (*User, error) {\n+\tquery := \"SELECT id, name FROM users WHERE name = '\" + name + \"'\"\n+\trow := db.QueryRow(query)\n+\tvar u User\n+\t_ = row.Scan(&u.ID, &u.Name)\n+\treturn &u, nil\n+}",
+        "content": "package main\n\nimport \"database/sql\"\n\ntype User struct {\n\tID   int\n\tName string\n}\n\nfunc GetUser(db *sql.DB, name string) (*User, error) {\n\tquery := \"SELECT id, name FROM users WHERE name = '\" + name + \"'\"\n\trow := db.QueryRow(query)\n\tvar u User\n\t_ = row.Scan(&u.ID, &u.Name)\n\treturn &u, nil\n}\n"
+      }
+    ]
+  },
+  "expected": [
+    { "file": "user.go", "line": 2, "keywords": ["sql injection", "injection", "parameterized", "parameterised", "sanitize"] },
+    { "file": "user.go", "line": 5, "keywords": ["ignored error", "error is ignored", "unchecked error", "scan error"] }
+  ]
+}

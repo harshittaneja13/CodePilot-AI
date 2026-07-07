@@ -1,0 +1,66 @@
+# ============================================================================
+# CodePilot AI — .gitignore
+# ============================================================================
+
+# ---------- Go ----------
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/vendor/
+/bin/
+/codepilot-server
+
+# ---------- Node / Frontend ----------
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+frontend/.cache/
+.vite/
+*.tsbuildinfo
+
+# ---------- Environment & Secrets ----------
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ---------- IDE ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ---------- OS ----------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.lnk
+
+# ---------- Docker ----------
+docker-compose.override.yml
+
+# ---------- Logs ----------
+*.log
+logs/
+
+# ---------- Coverage & Testing ----------
+coverage/
+coverage.out
+coverage.html
+*.coverprofile
+
+# ---------- Build Artifacts ----------
+/tmp/
+/dist/
+/build/
