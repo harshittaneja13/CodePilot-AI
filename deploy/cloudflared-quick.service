@@ -21,7 +21,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=ubuntu
+# Runs as root so it works on any distro/user (Ubuntu 'ubuntu', Oracle Linux 'opc', etc.).
 ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate --url http://localhost:3000
 Restart=on-failure
 RestartSec=5
