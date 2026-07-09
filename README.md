@@ -10,10 +10,11 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Live Demo](https://img.shields.io/badge/Live_Demo-online-brightgreen?logo=vercel)](https://code-pilot-ai-pr-review-agent.vercel.app/)
+[![Live App](https://img.shields.io/badge/Live_App-full_stack-orange)](https://arts-tank-action-economic.trycloudflare.com)
 
 **CodePilot AI** is an intelligent, automated code review agent that integrates with GitHub Pull Requests using the **Model Context Protocol (MCP)**. It analyzes diffs, provides contextual feedback, catches bugs, suggests improvements, and posts review comments — all powered by LLMs.
 
-**🔗 Live demo:** [codepilot-ai.vercel.app](https://code-pilot-ai-pr-review-agent.vercel.app/) · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [Pipeline](docs/AI_PIPELINE.md) · [Deployment](#-deployment)
+**🔗 Try it:** [Demo (UI only)](https://code-pilot-ai-pr-review-agent.vercel.app/) · [Full app + real backend](https://arts-tank-action-economic.trycloudflare.com) <sub>(self-hosted — may be intermittent)</sub> · [Quick Start](#-quick-start) · [Architecture](#-architecture) · [Pipeline](docs/AI_PIPELINE.md) · [Deployment](#-deployment)
 
 <br/>
 
@@ -21,10 +22,16 @@
 
 </div>
 
-<!-- NOTE: update the Live Demo URL above to your actual Vercel URL after deploying. -->
+<!-- NOTE: the "Full app" URL is a Cloudflare quick tunnel and is EPHEMERAL — it changes whenever the
+     VM/cloudflared restarts. Update it here (2 places above) when it changes, or switch to a permanent
+     URL (named tunnel + domain, or DuckDNS + Caddy) — see docs/DEPLOY_ORACLE.md. -->
 
-> **Live demo** runs the React dashboard in demo mode (built-in sample data, no backend) — see
-> [Deployment](#-deployment). The full stack (real PR reviews via webhooks) runs with `docker-compose`.
+> **Two ways to try it:**
+> - **Demo (UI only)** — the React dashboard in demo mode (built-in sample data, no backend); always on.
+> - **Full app + real backend** — the complete stack (real PR reviews) self-hosted on a free VM behind a
+>   Cloudflare tunnel. It **may be intermittent**; if the link is down, it's just been restarted.
+>
+> Full-stack self-hosting steps: [docs/DEPLOY_ORACLE.md](docs/DEPLOY_ORACLE.md).
 
 ---
 
